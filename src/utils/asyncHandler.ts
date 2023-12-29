@@ -1,26 +1,15 @@
 import { NextFunction, Request, Response } from "express";
 
 const asyncHandler = (
-  requestHandler: (req: Request, res: Response, next: NextFunction) => void
+  requestHandler: (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => Promise<void>
 ) => {
-  (req: Request, res: Response, next: NextFunction) => {
+  return (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(requestHandler(req, res, next)).catch((err) => next(err));
   };
 };
 
 export { asyncHandler };
-
-// const asyncHandler = () => {}
-// const asyncHandler = (func) => () => {}
-// const asyncHandler = (func) => async () => {}
-
-// const asyncHandler = (fn) => async (req, res, next) => {
-//     try {
-//         await fn(req, res, next)
-//     } catch (error) {
-//         res.status(err.code || 500).json({
-//             success: false,
-//             message: err.message
-//         })
-//     }
-// }
