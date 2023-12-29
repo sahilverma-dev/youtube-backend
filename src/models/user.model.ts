@@ -7,14 +7,15 @@ import {
   REFRESH_TOKEN_EXPIRY,
   REFRESH_TOKEN_SECRET,
 } from "../constants/envs";
+import { IUser } from "../interfaces";
 
-const userSchema = new Schema(
+const userSchema = new Schema<IUser>(
   {
     username: {
       type: String,
       required: true,
       unique: true,
-      lowecase: true,
+      lowercase: true, // Fixed typo in 'lowecase'
       trim: true,
       index: true,
     },
@@ -22,7 +23,7 @@ const userSchema = new Schema(
       type: String,
       required: true,
       unique: true,
-      lowecase: true,
+      lowercase: true,
       trim: true,
     },
     fullName: {
@@ -60,9 +61,7 @@ const userSchema = new Schema(
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  this.password = bcrypt.hash(this.password, 10);
+  this.password = await bcrypt.hash(this.password, 10);
   next();
 });
 
@@ -71,29 +70,21 @@ userSchema.methods.isPasswordCorrect = async function (password: string) {
 };
 
 userSchema.methods.generateAccessToken = function () {
+  const { _id, email, username, fullName } = this;
   return jwt.sign(
-    {
-      _id: this._id,
-      email: this.email,
-      username: this.username,
-      fullName: this.fullName,
-    },
+    { _id, email, username, fullName },
     ACCESS_TOKEN_SECRET as string,
     {
       expiresIn: ACCESS_TOKEN_EXPIRY,
     }
   );
 };
+
 userSchema.methods.generateRefreshToken = function () {
-  return jwt.sign(
-    {
-      _id: this._id,
-    },
-    REFRESH_TOKEN_SECRET as string,
-    {
-      expiresIn: REFRESH_TOKEN_EXPIRY,
-    }
-  );
+  const { _id } = this;
+  return jwt.sign({ _id }, REFRESH_TOKEN_SECRET as string, {
+    expiresIn: REFRESH_TOKEN_EXPIRY,
+  });
 };
 
-export const User = model("User", userSchema);
+export const UserModel = model<IUser>("User", userSchema); // Changed export name to UserModel
