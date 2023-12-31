@@ -1,14 +1,23 @@
 import { NextFunction, Request, Response } from "express";
+import { RequestWithUser } from "../interfaces";
 
 const asyncHandler = (
   requestHandler: (
-    req: Request,
+    req: Request | RequestWithUser,
     res: Response,
     next: NextFunction
   ) => Promise<void>
 ) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(requestHandler(req, res, next)).catch((err) => next(err));
+  return async (
+    req: Request | RequestWithUser,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      await requestHandler(req, res, next);
+    } catch (error) {
+      next(error);
+    }
   };
 };
 

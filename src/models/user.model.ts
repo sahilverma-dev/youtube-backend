@@ -7,9 +7,9 @@ import {
   REFRESH_TOKEN_EXPIRY,
   REFRESH_TOKEN_SECRET,
 } from "../constants/envs";
-import { IUser } from "../interfaces";
+import { IUser, IUserMethods, UserModel } from "../interfaces";
 
-const userSchema = new Schema<IUser>(
+const userSchema = new Schema<IUser, UserModel, IUserMethods>(
   {
     username: {
       type: String,
@@ -87,4 +87,4 @@ userSchema.methods.generateRefreshToken = function () {
   });
 };
 
-export const User = model<IUser>("User", userSchema); // Changed export name to UserModel
+export const User = model<IUser, UserModel>("User", userSchema); // Changed export name to UserModel

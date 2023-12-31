@@ -1,4 +1,9 @@
-import { Document, Schema } from "mongoose";
+import { Request } from "express";
+import { Document, Model, Types } from "mongoose";
+
+export interface RequestWithUser extends Request {
+  user: IUser;
+}
 
 export interface IUser {
   username: string;
@@ -6,10 +11,18 @@ export interface IUser {
   fullName: string;
   avatar: string;
   coverImage?: string;
-  watchHistory?: Schema.Types.ObjectId[];
+  watchHistory?: Types.ObjectId[];
   password: string;
   refreshToken?: string;
 }
+
+export interface IUserMethods {
+  isPasswordCorrect: (password: string) => Promise<boolean>;
+  generateAccessToken: () => string;
+  generateRefreshToken: () => string;
+}
+
+export type UserModel = Model<IUser, unknown, IUserMethods>;
 
 export interface IVideo extends Document {
   videoFile: string;
@@ -19,5 +32,5 @@ export interface IVideo extends Document {
   duration: number;
   views?: number;
   isPublished?: boolean;
-  owner: Schema.Types.ObjectId;
+  owner: Types.ObjectId;
 }
