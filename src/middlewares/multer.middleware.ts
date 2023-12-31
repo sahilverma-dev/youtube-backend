@@ -1,12 +1,17 @@
 import multer from "multer";
+import path from "path";
+
+const TEMP_UPLOAD_DIR = path.join(__dirname, "public", "temp");
 
 const storage = multer.diskStorage({
-  destination: function (_, __, cb) {
-    cb(null, "./public/temp");
+  destination: (_, __, cb) => {
+    cb(null, TEMP_UPLOAD_DIR);
   },
-  filename: function (_, file, cb) {
+  filename: (_, file, cb) => {
     cb(null, file.originalname);
   },
 });
 
-export const upload = multer({ storage });
+const upload = multer({ storage });
+
+export { upload };

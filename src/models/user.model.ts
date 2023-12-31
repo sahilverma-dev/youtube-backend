@@ -87,4 +87,4 @@ userSchema.methods.generateRefreshToken = function () {
   });
 };
 
-export const UserModel = model<IUser>("User", userSchema); // Changed export name to UserModel
+export const User = model<IUser>("User", userSchema); // Changed export name to UserModel
