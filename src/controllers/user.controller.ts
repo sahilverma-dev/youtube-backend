@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 import { User } from "../models/user.model";
+
 import { uploadOnCloudinary } from "../services/cloudnary/config";
 import { ApiResponse } from "../utils/ApiResponse";
 
@@ -23,27 +24,32 @@ export const registerUser = asyncHandler(
       throw new ApiError(409, "User already exists");
     }
 
-    console.log(req.files);
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const avatarLocalPath = req.files?.avatar[0]?.path;
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-expect-error
-    const coverLocalPath = req.files?.avatar[0]?.path;
+    const files = req.files as {
+      [key: string]: Express.Multer.File[];
+    };
+
+    const avatarLocalPath = files?.avatar[0].path;
+    const coverImageLocalPath = files?.coverImage
+      ? files?.coverImage[0]?.path
+      : null;
 
     if (!avatarLocalPath) {
       throw new ApiError(400, "Avatar file is required");
     }
-    console.log({ avatarLocalPath, coverLocalPath });
     const avatar = await uploadOnCloudinary(avatarLocalPath);
-    const coverImage = await uploadOnCloudinary(coverLocalPath);
+
+    const coverImage =
+      coverImageLocalPath !== null
+        ? await uploadOnCloudinary(coverImageLocalPath)
+        : null;
+
     if (!avatar) {
       throw new ApiError(400, "Avatar file is required");
     }
 
     const user = await User.create({
       avatar: avatar.url,
-      coverImage: coverImage ? coverImage?.url : "",
+      coverImage: coverImage !== null ? coverImage?.url : "",
       email,
       fullName,
       password,
@@ -57,7 +63,7 @@ export const registerUser = asyncHandler(
     if (createdUser) {
       res
         .status(201)
-        .json(new ApiResponse(20, "User created", { user: createdUser }));
+        .json(new ApiResponse(200, "User created", { user: createdUser }));
     } else {
       throw new ApiError(500, "Something went wrong while creating user");
     }
