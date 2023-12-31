@@ -1,3 +1,4 @@
+import jwt from "jsonwebtoken";
 import { User } from "./../models/user.model";
 import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
@@ -6,6 +7,7 @@ import { ApiError } from "../utils/ApiError";
 import { uploadOnCloudinary } from "../services/cloudnary/config";
 import { ApiResponse } from "../utils/ApiResponse";
 import { Types } from "mongoose";
+import { REFRESH_TOKEN_SECRET } from "../constants/envs";
 
 const generateAccessAndRefreshToken = async (userId: Types.ObjectId) => {
   try {
@@ -138,6 +140,7 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(404, "User not found");
   }
 });
+
 export const logoutUser = asyncHandler(async (req: Request, res: Response) => {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
@@ -166,3 +169,57 @@ export const logoutUser = asyncHandler(async (req: Request, res: Response) => {
     .clearCookie("refreshToken", option)
     .json(new ApiResponse(200, "User Logged out Successfully"));
 });
+
+export const refreshAccessToken = asyncHandler(
+  async (req: Request, res: Response) => {
+    const inComingRefreshingToken =
+      req.cookies?.refreshToken || req.body?.refreshToken;
+
+    if (!inComingRefreshingToken) {
+      throw new ApiError(401, "Unauthorized request");
+    }
+
+    const decodedToken = jwt.verify(
+      inComingRefreshingToken,
+      REFRESH_TOKEN_SECRET as string
+    ) as { _id: Types.ObjectId } | null;
+
+    if (decodedToken) {
+      if (!inComingRefreshingToken) {
+        const user = await User.findById(decodedToken._id);
+
+        if (user) {
+          if (inComingRefreshingToken === user?.refreshToken) {
+            const { accessToken, refreshToken: newRefreshToken } =
+              await generateAccessAndRefreshToken(user?._id);
+
+            const options = {
+              httpOnly: true,
+              secure: true,
+            };
+
+            res
+              .status(200)
+              .cookie("accessToken", accessToken, options)
+              .cookie("refreshToken", newRefreshToken, options)
+              .json(
+                new ApiResponse(200, "User Logged In successful", {
+                  user,
+                  refreshToken: newRefreshToken,
+                  accessToken,
+                })
+              );
+          } else {
+            throw new ApiError(401, "Refresh Token is expired or used");
+          }
+        } else {
+          throw new ApiError(401, "Refresh Token is expired or used");
+        }
+      } else {
+        throw new ApiError(401, "Unauthorized request");
+      }
+    } else {
+      throw new ApiError(401, "Unauthorized request");
+    }
+  }
+);
