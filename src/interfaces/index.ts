@@ -1,5 +1,5 @@
 import { Request } from "express";
-import { Document, Model, Types } from "mongoose";
+import { Document, Model, PopulatedDoc, Types } from "mongoose";
 
 export interface RequestWithUser extends Request {
   user: IUser;
@@ -34,3 +34,12 @@ export interface IVideo extends Document {
   isPublished?: boolean;
   owner: Types.ObjectId;
 }
+
+export interface ISubscription {
+  subscriber: PopulatedDoc<IUser & Document["_id"]>;
+  channel: PopulatedDoc<IUser & Document["_id"]>;
+}
+
+export interface SubscriptionDocument extends Document, ISubscription {}
+
+export interface SubscriptionModel extends Model<SubscriptionDocument> {}
