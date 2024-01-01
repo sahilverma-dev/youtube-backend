@@ -223,3 +223,125 @@ export const refreshAccessToken = asyncHandler(
     }
   }
 );
+
+export const changeCurrentPassword = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { oldPassword, newPassword } = req.body;
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const user = await User.findById(req?.user?._id);
+
+    if (!user) {
+      throw new ApiError(400, "There're no user");
+    }
+
+    const isPasswordCorrect = await user?.isPasswordCorrect(oldPassword);
+
+    if (isPasswordCorrect) {
+      user.password = newPassword;
+      await user.save({ validateBeforeSave: false });
+
+      res
+        .status(200)
+        .json(new ApiResponse(200, "Password changed successfully"));
+    } else {
+      throw new ApiError(400, "Invalid Old password");
+    }
+  }
+);
+
+export const updateUserDetailed = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { fullName, email } = req.body;
+
+    if (!fullName || !email) {
+      throw new ApiError(400, "Fields are required");
+    }
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const user = req.user;
+
+    const updatedUser = await User.findByIdAndUpdate(user?._id, {
+      $set: {
+        fullName,
+        email,
+      },
+    }).select("-password -refreshToken");
+
+    res
+      .status(200)
+      .json(new ApiResponse(200, "User info updated", { user: updatedUser }));
+  }
+);
+
+export const updateUserAvatar = asyncHandler(
+  async (req: Request, res: Response) => {
+    const avatarFile = req.file?.path;
+
+    if (!avatarFile) {
+      throw new ApiError(400, "Avatar file is missing");
+    }
+
+    const avatar = await uploadOnCloudinary(avatarFile);
+    if (!avatar) {
+      throw new ApiError(400, "Failed to upload avatar file");
+    }
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const user = req.user;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      user?._id,
+      { $set: { avatar: avatar.url } },
+      { new: true }
+    ).select("-password -refreshToken");
+
+    res
+      .status(200)
+      .json(new ApiResponse(200, "User info updated", { user: updatedUser }));
+  }
+);
+
+export const updateUserCoverImage = asyncHandler(
+  async (req: Request, res: Response) => {
+    const coverImageFile = req.file?.path;
+
+    if (!coverImageFile) {
+      throw new ApiError(400, "coverImage file is missing");
+    }
+
+    const coverImage = await uploadOnCloudinary(coverImageFile);
+    if (!coverImage) {
+      throw new ApiError(400, "Failed to upload coverImage file");
+    }
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const user = req.user;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      user?._id,
+      { $set: { coverImage: coverImage.url } },
+      { new: true }
+    ).select("-password -refreshToken");
+
+    res
+      .status(200)
+      .json(new ApiResponse(200, "User info updated", { user: updatedUser }));
+  }
+);
+
+export const getCurrentUser = asyncHandler(
+  async (req: Request, res: Response) => {
+    res.status(200).json(
+      new ApiResponse(200, "Current user fetched successfully", {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        user: req?.user,
+      })
+    );
+  }
+);
