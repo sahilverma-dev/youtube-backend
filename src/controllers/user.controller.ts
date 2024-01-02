@@ -320,7 +320,7 @@ export const updateUserCoverImage = asyncHandler(
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    const user = req.user;
+    const user = req?.user;
 
     const updatedUser = await User.findByIdAndUpdate(
       user?._id,
@@ -341,6 +341,81 @@ export const getCurrentUser = asyncHandler(
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         user: req?.user,
+      })
+    );
+  }
+);
+
+export const getUserChannelProfile = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { username } = req.body;
+
+    if (!username) {
+      throw new ApiError(400, "username is required");
+    }
+
+    const channel = await User.aggregate([
+      {
+        $match: {
+          username: username?.toLowerCase(),
+        },
+      },
+      {
+        $lookup: {
+          from: "subscriptions",
+          localField: "_id",
+          foreignField: "channel",
+          as: "subscribers",
+        },
+      },
+      {
+        $lookup: {
+          from: "subscriptions",
+          localField: "_id",
+          foreignField: "subscriber",
+          as: "subscribedTo",
+        },
+      },
+      {
+        $addFields: {
+          subscribersCount: {
+            $size: "$subscribers",
+          },
+          channelsSubscribedToCount: {
+            $size: "$subscribedTo",
+          },
+          isSubscribed: {
+            $cond: {
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+              if: { $in: [req?.user?._id, "$subscribers.subscriber"] },
+              then: true,
+              else: false,
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          fullName: 1,
+          username: 1,
+          subscribersCount: 1,
+          channelsSubscribedToCount: 1,
+          isSubscribed: 1,
+          avatar: 1,
+          coverImage: 1,
+          email: 1,
+        },
+      },
+    ]);
+
+    if (!channel?.length) {
+      throw new ApiError(404, "channel not found");
+    }
+
+    res.status(200).json(
+      new ApiResponse(200, "Channel Data", {
+        channel: channel[0],
       })
     );
   }
