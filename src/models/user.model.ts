@@ -15,7 +15,7 @@ const userSchema = new Schema<IUser, UserModel, IUserMethods>(
       type: String,
       required: true,
       unique: true,
-      lowercase: true, // Fixed typo in 'lowecase'
+      lowercase: true,
       trim: true,
       index: true,
     },
