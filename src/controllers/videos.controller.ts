@@ -109,7 +109,10 @@ export const uploadVideo = asyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(500, "Can't save video data on database");
   }
 
-  const videoData = await videoDoc.populate("owner", "-password -refreshToken");
+  const videoData = await videoDoc.populate(
+    "owner",
+    "fullName username avatar"
+  );
 
   res.status(200).json(
     new ApiResponse(200, "Video successfully uploaded", {
