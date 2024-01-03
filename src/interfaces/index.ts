@@ -25,7 +25,7 @@ export interface IUserMethods {
 export type UserModel = Model<IUser, unknown, IUserMethods>;
 
 export interface IVideo extends Document {
-  videoFile: string;
+  video: string;
   thumbnail: string;
   title: string;
   description: string;

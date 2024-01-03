@@ -4,7 +4,7 @@ import { IVideo } from "../interfaces";
 
 const videoSchema = new Schema<IVideo>(
   {
-    videoFile: {
+    video: {
       type: String,
       required: [true, "Video file is required"],
     },
@@ -46,4 +46,4 @@ const videoSchema = new Schema<IVideo>(
 
 videoSchema.plugin(mongooseAggregatePaginate);
 
-export const VideoModel = model<IVideo>("Video", videoSchema);
+export const Video = model<IVideo>("Video", videoSchema);
