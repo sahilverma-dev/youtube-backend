@@ -4,7 +4,10 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
 import { ApiError } from "../utils/ApiError";
 
-import { uploadOnCloudinary } from "../services/cloudnary/config";
+import {
+  destroyFromCloudinary,
+  uploadOnCloudinary,
+} from "../services/cloudnary/config";
 import { ApiResponse } from "../utils/ApiResponse";
 import { Types } from "mongoose";
 import { REFRESH_TOKEN_SECRET } from "../constants/envs";
@@ -289,19 +292,25 @@ export const updateUserAvatar = asyncHandler(
       throw new ApiError(400, "Failed to upload avatar file");
     }
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const user = req.user;
+    try {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      const user = req.user;
 
-    const updatedUser = await User.findByIdAndUpdate(
-      user?._id,
-      { $set: { avatar: avatar.url } },
-      { new: true }
-    ).select("-password -refreshToken");
+      const updatedUser = await User.findByIdAndUpdate(
+        user?._id,
+        { $set: { avatar: avatar.url } },
+        { new: true }
+      ).select("-password -refreshToken");
+      await destroyFromCloudinary(user?.avatar);
 
-    res
-      .status(200)
-      .json(new ApiResponse(200, "User info updated", { user: updatedUser }));
+      res
+        .status(200)
+        .json(new ApiResponse(200, "User info updated", { user: updatedUser }));
+    } catch (error) {
+      console.log(error);
+      new ApiError(200, "Something went wrong while updating avatar");
+    }
   }
 );
 
@@ -317,20 +326,25 @@ export const updateUserCoverImage = asyncHandler(
     if (!coverImage) {
       throw new ApiError(400, "Failed to upload coverImage file");
     }
+    try {
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      const user = req?.user;
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const user = req?.user;
+      const updatedUser = await User.findByIdAndUpdate(
+        user?._id,
+        { $set: { coverImage: coverImage.url } },
+        { new: true }
+      ).select("-password -refreshToken");
 
-    const updatedUser = await User.findByIdAndUpdate(
-      user?._id,
-      { $set: { coverImage: coverImage.url } },
-      { new: true }
-    ).select("-password -refreshToken");
-
-    res
-      .status(200)
-      .json(new ApiResponse(200, "User info updated", { user: updatedUser }));
+      await destroyFromCloudinary(user?.coverImage);
+      res
+        .status(200)
+        .json(new ApiResponse(200, "User info updated", { user: updatedUser }));
+    } catch (error) {
+      console.log(error);
+      new ApiError(200, "Something went wrong while updating cover image");
+    }
   }
 );
 
